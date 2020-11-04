@@ -121,14 +121,14 @@ class Account(InitializerModel):
             self._init_media(array[prop])
 
     def _init_media(self, array):
-        self.media_count = array['count'] if 'count' in array.keys() else 0 
+        self.media_count = array['count'] if 'count' in array.keys() else 0
 
         try:
             nodes = array['edges']
         except:
             return
 
-        if not self.media_count or isinstance(nodes, list):
+        if not (self.media_count or isinstance(nodes, list)):
             return
 
         for media_array in nodes:

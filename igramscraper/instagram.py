@@ -885,7 +885,7 @@ class Instagram:
         return data
 
     def get_followers(self, account_id, count=20, page_size=20, rate_limit_sleep_min=10.0, rate_limit_sleep_max=50.0,
-                      delayed_time_min=2.0, delayed_time_max=6.0, end_cursor='',
+                      delayed_time_min=2.0, delayed_time_max=15.0, end_cursor='',
                       delayed=True):
 
         """
@@ -972,9 +972,13 @@ class Instagram:
 
             if delayed != None:
                 # Random wait between 1 and 3 sec to mimic browser
-                microsec = random.uniform(delayed_time_min, delayed_time_max)
-                time.sleep(microsec)
+                print('Grabbed count {} for user id {}'.format(index, account_id))
+                sleep_sec = random.uniform(delayed_time_min, delayed_time_max)
+                time.sleep(sleep_sec)
 
+            if index > 1000:
+                time.sleep(30)
+                
         data = {}
         data['next_page'] = next_page
         data['accounts'] = accounts
@@ -1007,7 +1011,8 @@ class Instagram:
         next_page = end_cursor
 
         if count < page_size:
-            raise InstagramException('Count must be greater than or equal to page size.')
+            raise InstagramException(
+                'Count must be greater than or equal to page size.')
 
         while True:
 
@@ -1063,9 +1068,10 @@ class Instagram:
                 break
 
             if delayed != None:
+                print('Grabbed count {} for user id {}'.format(index, account_id))
                 # Random wait between 1 and 3 sec to mimic browser
-                microsec = random.uniform(delayed_time_min, delayed_time_max)
-                time.sleep(microsec)
+                seconds_time = random.uniform(delayed_time_min, delayed_time_max)
+                time.sleep(seconds_time)
 
         data = {}
         data['next_page'] = next_page
@@ -1232,9 +1238,10 @@ class Instagram:
 
         return number_of_comments
 
-    def get_account(self, username):
+    def get_account(self, username, _json=False):
         """
         :param username: username
+        :param _json: should it return in Account or in json?
         :return: Account
         """
         time.sleep(self.sleep_between_requests)
@@ -1251,12 +1258,19 @@ class Instagram:
 
         user_array = Instagram.extract_shared_data_from_body(response.text)
 
-        if user_array['entry_data']['ProfilePage'][0]['graphql']['user'] is None:
+        try:
+            if user_array['entry_data']['ProfilePage'][0]['graphql']['user'] is None:
+                raise InstagramNotFoundException(
+                    'Account with this username does not exist')
+        except TypeError:
             raise InstagramNotFoundException(
-                'Account with this username does not exist')
+                'Account with this username does not exist or Restricted')
 
-        return Account(
-            user_array['entry_data']['ProfilePage'][0]['graphql']['user'])
+        if _json:
+            return user_array['entry_data']['ProfilePage'][0]['graphql']['user']
+        else:
+            return Account(
+                user_array['entry_data']['ProfilePage'][0]['graphql']['user'])
 
     def get_stories(self, reel_ids=None):
         """
